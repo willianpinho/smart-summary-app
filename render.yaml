@@ -1,0 +1,25 @@
+# Render Blueprint Configuration for Smart Summary Backend
+# This file enables Infrastructure as Code deployment on Render
+# Documentation: https://render.com/docs/blueprint-spec
+
+services:
+  # Backend API Service
+  - type: web
+    name: smart-summary-backend
+    runtime: python
+    plan: free  # Options: free, starter, standard, pro
+    region: oregon  # Options: oregon, frankfurt, singapore, ohio
+    branch: main
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false  # Must be added manually in Render dashboard for security
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    healthCheckPath: /health
+    autoDeploy: true  # Auto-deploy on git push
+
+# Note: Environment variables marked with 'sync: false' must be added manually
+# in the Render dashboard for security reasons (they won't be synced from this file)

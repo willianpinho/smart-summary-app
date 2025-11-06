@@ -1,0 +1,110 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Frontend Quality Check
+  frontend-check:
+    name: Frontend Quality Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint Check
+        run: npm run lint
+
+      - name: Unit Tests
+        run: npm test -- --coverage
+
+      - name: Build Check
+        run: npm run build
+        env:
+          # Use production URL for PR checks to match deployment environment
+          NEXT_PUBLIC_API_URL: https://smart-summary-app.onrender.com
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          directory: ./frontend/coverage
+          flags: frontend
+          fail_ci_if_error: false
+
+  # Backend Quality Check
+  backend-check:
+    name: Backend Quality Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio httpx flake8 mypy
+
+      - name: Code Style Check
+        run: flake8 . --count --exclude=venv,__pycache__,.pytest_cache --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Type Check
+        run: mypy main.py --ignore-missing-imports || true
+
+      - name: Unit Tests
+        run: pytest test_main.py --cov=main --cov-report=xml --cov-report=term
+        env:
+          OPENAI_API_KEY: test_key
+          ANTHROPIC_API_KEY: test_key
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          directory: ./backend
+          flags: backend
+          fail_ci_if_error: false
+
+  # Summary
+  pr-summary:
+    name: PR Check Summary
+    needs: [frontend-check, backend-check]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Check Results
+        run: |
+          echo "Frontend Check: ${{ needs.frontend-check.result }}"
+          echo "Backend Check: ${{ needs.backend-check.result }}"
+
+          if [ "${{ needs.frontend-check.result }}" != "success" ] || [ "${{ needs.backend-check.result }}" != "success" ]; then
+            echo "❌ Some checks failed"
+            exit 1
+          else
+            echo "✅ All checks passed"
+          fi

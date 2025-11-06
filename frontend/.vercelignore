@@ -1,0 +1,12 @@
+node_modules
+.next
+.env.local
+.env*.local
+*.log
+.DS_Store
+coverage
+.cache
+__tests__
+e2e
+playwright-report
+test-results
