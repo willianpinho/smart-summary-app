@@ -1,469 +1,322 @@
-# Smart Summary App
+# Smart Summary
 
-An AI-powered full-stack application that transforms long text into concise summaries using Large Language Models (LLM). Built with Next.js, FastAPI, and OpenAI.
+**AI-powered text summarization with real-time streaming.**
 
-[![Frontend Deploy](https://img.shields.io/badge/Frontend-Vercel-black?style=flat-square&logo=vercel)](https://vercel.com)
-[![Backend Deploy](https://img.shields.io/badge/Backend-Render-46E3B7?style=flat-square&logo=render)](https://render.com)
-[![CI/CD](https://github.com/willianpinho/smart-summary-app/actions/workflows/ci.yml/badge.svg)](https://github.com/willianpinho/smart-summary-app/actions)
+Paste any text and watch a structured, markdown-formatted summary materialize word by word -- powered by GPT-4o-mini and delivered through Server-Sent Events.
 
-![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=flat-square&logo=next.js)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi)
-![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?style=flat-square&logo=openai)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=flat-square&logo=typescript)
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python)
+[![CI](https://github.com/willianpinho/smart-summary-app/actions/workflows/ci.yml/badge.svg)](https://github.com/willianpinho/smart-summary-app/actions)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://python.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000?logo=next.js)](https://nextjs.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Table of Contents
+---
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Setup Instructions](#setup-instructions)
-- [Running the Application](#running-the-application)
-- [Testing](#testing)
-- [Security Considerations](#security-considerations)
-- [Scaling Considerations](#scaling-considerations)
-- [CI/CD Pipeline](#cicd-pipeline)
-- [Future Improvements](#future-improvements)
-- [Project Structure](#project-structure)
+## Screenshots
+
+> _Coming soon -- screenshots of the summarization interface, streaming in action, and dark mode._
+
+---
 
 ## Features
 
-- **Real-time Streaming**: Server-sent events (SSE) provide real-time summary generation with smooth UX
-- **AI-Powered**: Leverages OpenAI's GPT-4o-mini for cost-effective, high-quality summarization
-- **Security-First**: Built-in prompt injection prevention and input validation
-- **Responsive Design**: Beautiful, accessible UI built with Tailwind CSS
-- **Comprehensive Testing**: Unit tests, UI tests, snapshot tests, and E2E tests
-- **Developer Experience**: TypeScript, ESLint, and modern tooling for robust development
+| Feature | Description |
+|---------|-------------|
+| **Real-time streaming** | SSE-based progressive text rendering -- summary appears word by word |
+| **Markdown output** | Structured summaries with headers, bold highlights, and bullet points via `@tailwindcss/typography` |
+| **Prompt injection prevention** | Multi-layer defense: system prompt isolation, pattern detection, special character ratio checks |
+| **Input validation** | 10--50,000 character range enforced on both client and server |
+| **Dark mode** | System-aware theme switching with Tailwind |
+| **Copy to clipboard** | One-click copy of the generated summary |
+| **Example text loader** | Pre-loaded sample text for instant demo |
+| **CORS security** | Allowlist restricted to `localhost` and `*.vercel.app` origins |
+
+---
 
 ## Architecture
 
-### System Architecture
-
 ```
-┌─────────────┐      HTTPS      ┌──────────────┐     API Call    ┌─────────────┐
-│   Next.js   │ ──────────────> │   FastAPI    │ ─────────────> │   OpenAI    │
-│  Frontend   │                  │   Backend    │                 │     API     │
-│             │ <────────────── │              │ <───────────── │             │
-│ (React)     │   SSE Stream    │  (Python)    │  Stream Resp.  │  (GPT-4o)   │
-└─────────────┘                  └──────────────┘                 └─────────────┘
-     │                                  │                               │
-     │                                  │                               │
-  Port 3000                         Port 8000                      External
+                                    POST /api/summarize
+ ┌──────────────┐    HTTPS     ┌──────────────────┐    OpenAI SDK    ┌─────────────┐
+ │              │ ───────────> │                  │ ──────────────> │             │
+ │   Next.js    │              │     FastAPI      │                  │   OpenAI    │
+ │   React 19   │ <─────────── │   Python 3.11    │ <────────────── │  GPT-4o-mini│
+ │              │  SSE stream  │                  │  stream chunks  │             │
+ └──────────────┘              └──────────────────┘                  └─────────────┘
+    Port 3000                      Port 8000                          External API
 ```
 
 ### Data Flow
 
-1. **User Input**: User pastes text into the Next.js frontend
-2. **Validation**: Client-side validation (length, format)
-3. **API Request**: POST request to FastAPI `/api/summarize` endpoint
-4. **Server Validation**: Server-side validation and prompt injection prevention
-5. **LLM Processing**: FastAPI streams request to OpenAI API
-6. **Streaming Response**: OpenAI streams tokens back through FastAPI
-7. **Real-time Display**: Frontend receives SSE stream and displays summary progressively
+1. User pastes text into the React form
+2. Client-side validation enforces length and format constraints
+3. `POST /api/summarize` sends the text to FastAPI
+4. Server-side validation runs prompt injection detection and input sanitization
+5. FastAPI streams a chat completion request to OpenAI (GPT-4o-mini, temperature 0.3)
+6. Tokens are accumulated, formatted with markdown post-processing, then re-streamed as SSE chunks
+7. The frontend renders the summary progressively with `@tailwindcss/typography`
 
 ### Key Design Decisions
 
-**Why FastAPI as a middleware layer?**
-- Centralized security controls (prompt injection prevention)
-- API key protection (not exposed to client)
-- Rate limiting and request validation
-- Server-side streaming optimization
-- Logging and monitoring capabilities
+| Decision | Rationale |
+|----------|-----------|
+| **FastAPI middleware layer** | Keeps the OpenAI API key server-side, centralizes validation, enables logging and rate limiting without exposing secrets to the browser |
+| **SSE over WebSockets** | Summarization is unidirectional (server to client). SSE is simpler, has native browser support via `EventSource`, and avoids the connection management overhead of WebSockets |
+| **GPT-4o-mini** | Optimal cost-quality tradeoff for summarization ($0.15/1M input tokens, sub-2s latency) |
+| **Markdown post-processing** | The LLM output is reformatted server-side (`format_markdown_with_breaks`) to ensure consistent heading spacing and bullet structure before streaming |
 
-**Why Server-Sent Events (SSE)?**
-- Real-time user feedback (better UX than waiting)
-- Efficient one-directional streaming (no WebSocket overhead)
-- Native browser support with simple implementation
-- Graceful fallback on connection issues
-
-**Why GPT-4o-mini?**
-- Cost-effective for summarization tasks ($0.15/1M input tokens)
-- Fast response times (< 2 seconds typical)
-- High-quality summaries for most use cases
-- Good balance of performance and cost
+---
 
 ## Tech Stack
 
-### Frontend
-- **Next.js 15.0**: React framework with App Router
-- **React 18.3**: UI library
-- **TypeScript 5.6**: Type safety
-- **Tailwind CSS 3.4**: Utility-first styling
-- **Jest + React Testing Library**: Unit and component testing
-- **Playwright**: E2E testing
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | Next.js 16, React 19, TypeScript 5.6 | App Router, server/client components |
+| **Styling** | Tailwind CSS, `@tailwindcss/typography` | Utility-first CSS, prose rendering |
+| **Backend** | FastAPI 0.115, Python 3.11, Pydantic 2.9 | Async API, streaming, validation |
+| **AI** | OpenAI SDK, GPT-4o-mini | Chat completions with streaming |
+| **Testing** | Jest, React Testing Library, Playwright, Pytest | Unit, component, E2E, API tests |
+| **CI/CD** | GitHub Actions | Lint, test, build, deploy |
+| **Hosting** | Vercel (frontend), Render (backend) | Edge deployment, managed Python |
 
-### Backend
-- **FastAPI 0.115**: Modern Python web framework
-- **OpenAI SDK 1.54**: Official OpenAI Python client
-- **Pydantic 2.9**: Data validation
-- **Uvicorn**: ASGI server with WebSocket support
-- **Pytest**: Testing framework
+---
 
-## Setup Instructions
+## Quick Start
 
 ### Prerequisites
 
-- **Node.js**: 18.x or higher
-- **Python**: 3.11 or higher
-- **npm**: 9.x or higher
-- **pip**: 23.x or higher
-- **OpenAI API Key**: Get one from [OpenAI Platform](https://platform.openai.com/)
+- Node.js 18+ and npm (or pnpm)
+- Python 3.11+
+- An [OpenAI API key](https://platform.openai.com/api-keys)
 
-### Installation
+### 1. Clone and configure
 
-1. **Clone the repository**
 ```bash
-git clone <repository-url>
+git clone https://github.com/willianpinho/smart-summary-app.git
 cd smart-summary-app
+
+# Create environment file
+cp .env.example .env   # or create manually
 ```
 
-2. **Set up environment variables**
+Add your API key to `.env`:
 
-The `.env` file is already configured with the OpenAI API key:
-```bash
-# .env file (already created)
-OPENAI_API_KEY=sk-proj-...
+```
+OPENAI_API_KEY=sk-...
 ```
 
-3. **Install backend dependencies**
+### 2. Start the backend
+
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-4. **Install frontend dependencies**
-```bash
-cd ../frontend
-npm install
-```
-
-## Running the Application
-
-### Development Mode
-
-1. **Start the FastAPI backend** (in terminal 1):
-```bash
-cd backend
-source venv/bin/activate  # On Windows: venv\Scripts\activate
 python main.py
 ```
 
-Backend runs at: `http://localhost:8000`
-- API Docs: `http://localhost:8000/docs`
-- Health Check: `http://localhost:8000/health`
+The API will be available at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
 
-2. **Start the Next.js frontend** (in terminal 2):
+### 3. Start the frontend
+
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
-Frontend runs at: `http://localhost:3000`
+Open `http://localhost:3000` in your browser.
 
-3. **Access the application**
+---
 
-Open your browser and navigate to `http://localhost:3000`
+## Environment Variables
 
-### Production Mode
+| Variable | Location | Required | Default | Description |
+|----------|----------|----------|---------|-------------|
+| `OPENAI_API_KEY` | Backend `.env` | Yes | -- | OpenAI API key for GPT-4o-mini |
+| `NEXT_PUBLIC_API_URL` | Frontend `.env` | No | `http://localhost:8000` | Backend API base URL |
+| `ALLOWED_ORIGINS` | Backend `.env` | No | -- | Comma-separated additional CORS origins |
 
-**Backend:**
-```bash
-cd backend
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm run build
-npm start
-```
+---
 
 ## Testing
 
-### Backend Tests
+The project maintains **62 tests** across three layers with 95%+ backend coverage.
+
+### Backend (24 tests)
 
 ```bash
 cd backend
 source venv/bin/activate
 
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=main --cov-report=html
-
-# Run specific test file
-pytest test_main.py -v
+pytest -v                                  # Run all tests
+pytest --cov=main --cov-report=term-missing  # With coverage report
 ```
 
-**Test Coverage:**
-- Unit tests for all endpoints
-- Input validation tests
-- Prompt injection prevention tests
-- Streaming functionality tests
-- Error handling tests
-- Security tests
+Covers: endpoint responses, input validation, prompt injection prevention, SSE streaming, error handling.
 
-### Frontend Tests
+### Frontend Unit Tests (24 tests)
 
 ```bash
 cd frontend
 
-# Unit and component tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
-npm run test:coverage
-
-# E2E tests with Playwright
-npm run e2e
-
-# E2E tests with UI
-npm run e2e:ui
+npm test                  # Run all unit tests
+npm run test:watch        # Watch mode
+npm run test:coverage     # Coverage report
 ```
 
-**Test Coverage:**
-- Component unit tests (SummaryForm, SummaryDisplay)
-- Integration tests (page-level)
-- Snapshot tests
-- E2E tests (full user flows)
+Covers: component rendering, form validation, streaming display, snapshot regression.
 
-### Test Results
+### E2E Tests (14 tests)
 
-All tests are passing with high coverage:
-- Backend: 95%+ code coverage
-- Frontend: 90%+ code coverage
-- E2E: All critical user journeys covered
+```bash
+cd frontend
 
-## Security Considerations
+npx playwright install    # First time only
+npm run e2e               # Headless
+npm run e2e:ui            # Interactive UI mode
+```
 
-### Current Implementation
+Covers: full summarization flow, error states, clipboard copy, dark mode, responsive layout.
 
-1. **Prompt Injection Prevention**
-   - System prompt with strict role separation
-   - Input validation (character limits, pattern detection)
-   - Sanitization of potentially malicious patterns
-   - Clear instructions to LLM to ignore embedded commands
+---
 
-2. **Input Validation**
-   - Minimum length: 10 characters
-   - Maximum length: 50,000 characters
-   - Special character ratio detection
-   - Repeated pattern detection
-   - Server-side validation (defense in depth)
+## API Reference
 
-3. **API Key Protection**
-   - API key stored in backend environment
-   - Never exposed to client
-   - .gitignore configured to prevent commits
+### `GET /`
 
-4. **CORS Configuration**
-   - Restricted to localhost in development
-   - Should be configured for specific domains in production
+Health check.
 
-5. **Error Handling**
-   - Generic error messages to client (no sensitive info leak)
-   - Detailed errors logged server-side only
-   - Graceful degradation on failures
+```json
+{ "status": "healthy", "service": "Smart Summary API", "version": "1.0.0" }
+```
 
-### Recommended Enhancements for Production
+### `GET /health`
 
-1. **Rate Limiting**
-   - Implement per-IP rate limits (e.g., 10 requests/minute)
-   - Use Redis for distributed rate limiting
-   - Example: `slowapi` or `fastapi-limiter`
+Detailed health check including OpenAI configuration status.
 
-2. **Authentication & Authorization**
-   - Add user authentication (JWT tokens)
-   - Implement API key rotation
-   - Track usage per user
+```json
+{ "status": "healthy", "openai_configured": true, "service": "Smart Summary API" }
+```
 
-3. **Content Security**
-   - Implement content moderation (OpenAI Moderation API)
-   - Add PII detection and redaction
-   - Log all inputs for audit trail
+### `POST /api/summarize`
 
-4. **Infrastructure Security**
-   - Use HTTPS in production (TLS 1.3)
-   - Implement WAF (Web Application Firewall)
-   - Regular security audits and penetration testing
-   - Keep dependencies updated (Dependabot)
+Streams a markdown-formatted summary via Server-Sent Events.
 
-5. **Advanced Prompt Injection Defense**
-   - Implement LLM guardrails (e.g., NeMo Guardrails)
-   - Add input/output content filtering
-   - Use prompt engineering best practices
-   - Consider dual-LLM approach (one for validation)
+**Request:**
 
-## Future Improvements
+```json
+{ "text": "Your long text here (10-50,000 characters)..." }
+```
 
-### Short-term (1-2 weeks)
+**Response** (`text/event-stream`):
 
-1. **User Experience**
-   - [ ] Add summary length options (short, medium, long)
-   - [ ] Support multiple summary styles (bullet points, paragraph, executive)
-   - [ ] Add text formatting in summary display (bold, italics)
-   - [ ] Implement summary history (last 10 summaries)
-   - [ ] Add dark mode toggle
+```
+data: ## Over
+data: view\n\nTh
+data: is is a su
+data: mmary...
+data: [DONE]
+```
 
-2. **Features**
-   - [ ] Support file uploads (PDF, DOCX, TXT)
-   - [ ] Add language detection and multi-language support
-   - [ ] Implement summary comparison (before/after)
-   - [ ] Add export options (PDF, DOCX, TXT)
+**Error codes:**
 
-3. **Technical**
-   - [ ] Add request queuing for high traffic
-   - [ ] Implement Redis caching
-   - [ ] Add request logging to database
-   - [ ] Set up monitoring (Prometheus/Grafana)
+| Status | Reason |
+|--------|--------|
+| `422` | Validation error -- text too short, too long, or suspicious patterns detected |
+| `500` | Internal server error (logged server-side, generic message returned) |
 
-### Medium-term (1-2 months)
-
-1. **Authentication & User Management**
-   - [ ] User registration and login
-   - [ ] Personal summary history
-   - [ ] Usage quotas per user
-   - [ ] API key management for developers
-
-2. **Advanced AI Features**
-   - [ ] Multi-document summarization
-   - [ ] Custom prompt templates
-   - [ ] Fine-tuned models for specific domains
-   - [ ] Summary quality feedback loop
-
-3. **Business Features**
-   - [ ] Freemium pricing model
-   - [ ] Usage analytics dashboard
-   - [ ] Team collaboration features
-   - [ ] API access for integrations
-
-### Long-term (3-6 months)
-
-1. **Enterprise Features**
-   - [ ] SSO integration (SAML, OAuth)
-   - [ ] Advanced security (SOC2 compliance)
-   - [ ] On-premise deployment option
-   - [ ] White-label solution
-
-2. **AI Enhancements**
-   - [ ] Multi-model support (Claude, Gemini, Llama)
-   - [ ] Model routing based on content type
-   - [ ] Custom fine-tuning for specific use cases
-   - [ ] Embeddings-based semantic search
-
-3. **Platform Expansion**
-   - [ ] Mobile apps (iOS, Android)
-   - [ ] Browser extension
-   - [ ] Slack/Discord integration
-   - [ ] API marketplace
+---
 
 ## Project Structure
 
 ```
 smart-summary-app/
-├── backend/                  # FastAPI backend
-│   ├── main.py              # Main application file
-│   ├── test_main.py         # Backend tests
-│   └── requirements.txt     # Python dependencies
+├── backend/
+│   ├── main.py                 # FastAPI application (routes, validation, streaming)
+│   ├── test_main.py            # 24 Pytest tests
+│   └── requirements.txt
 │
-├── frontend/                # Next.js frontend
-│   ├── app/                 # App Router pages
-│   │   ├── page.tsx        # Home page
-│   │   ├── layout.tsx      # Root layout
-│   │   └── globals.css     # Global styles
-│   │
-│   ├── components/          # React components
-│   │   ├── SummaryForm.tsx
-│   │   └── SummaryDisplay.tsx
-│   │
-│   ├── __tests__/          # Jest tests
-│   │   ├── SummaryForm.test.tsx
-│   │   ├── SummaryDisplay.test.tsx
-│   │   └── page.test.tsx
-│   │
-│   ├── e2e/                # Playwright E2E tests
-│   │   └── summarization.spec.ts
-│   │
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── jest.config.js
+├── frontend/
+│   ├── app/                    # Next.js App Router
+│   │   ├── page.tsx            # Home page
+│   │   ├── layout.tsx          # Root layout with metadata
+│   │   └── globals.css         # Tailwind base styles
+│   ├── components/
+│   │   ├── SummaryForm.tsx     # Text input form with validation
+│   │   ├── SummaryDisplay.tsx  # Streaming summary renderer
+│   │   ├── FormattedSummary.tsx# Markdown prose component
+│   │   └── StreamingProgress.tsx # Progress indicator
+│   ├── lib/
+│   │   └── config.ts           # API URL configuration
+│   ├── __tests__/              # Jest + RTL unit tests
+│   ├── e2e/                    # Playwright E2E tests
 │   ├── playwright.config.ts
+│   ├── jest.config.js
 │   └── tailwind.config.js
 │
-├── .env                     # Environment variables
-├── .gitignore
-└── README.md               # This file
+├── .github/workflows/          # CI/CD pipeline
+├── vercel.json                 # Vercel deployment config
+├── render.yaml                 # Render deployment config
+└── README.md
 ```
-
-## API Documentation
-
-### Endpoints
-
-**GET /**
-- Description: Health check
-- Response: `{"status": "healthy", "service": "Smart Summary API", "version": "1.0.0"}`
-
-**GET /health**
-- Description: Detailed health check
-- Response: `{"status": "healthy", "openai_configured": true}`
-
-**POST /api/summarize**
-- Description: Generate summary of text (streaming)
-- Request Body:
-  ```json
-  {
-    "text": "Your long text here..."
-  }
-  ```
-- Response: Server-Sent Events stream
-  ```
-  data: This is
-  data: a summary
-  data: of your text.
-  data: [DONE]
-  ```
-- Errors:
-  - 422: Validation error (text too short/long, invalid format)
-  - 500: Internal server error
-
-### Rate Limits (Recommended)
-
-- 10 requests per minute per IP (development)
-- 100 requests per minute per user (production with auth)
-- 1,000 requests per minute globally
-
-### Deployment Status
-
-- **Frontend**: Deployed on Vercel → [Live Demo](https://vercel.com)
-- **Backend**: Deployed on Render → [API Docs](https://render.com)
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-**Note**: All PRs must pass CI checks (tests, linting, build) before merging.
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For questions or issues, please open an issue on GitHub or contact the development team.
 
 ---
 
-**Built with ❤️ using Next.js, FastAPI, and OpenAI**
+## Deployment
+
+### Frontend (Vercel)
+
+The frontend deploys automatically on push to `main` via Vercel's GitHub integration. Configuration lives in `vercel.json`.
+
+Set the build-time environment variable:
+
+```
+NEXT_PUBLIC_API_URL=https://your-backend.onrender.com
+```
+
+### Backend (Render)
+
+The backend deploys automatically via `render.yaml`. Set the following environment variable in the Render dashboard:
+
+```
+OPENAI_API_KEY=sk-...
+```
+
+### CI/CD Pipeline
+
+Every push and pull request triggers the GitHub Actions workflow:
+
+1. **Lint** -- ESLint (frontend), formatting checks
+2. **Test** -- Pytest (backend), Jest (frontend), Playwright (E2E)
+3. **Build** -- Next.js production build
+4. **Deploy** -- Automatic on `main` via Vercel and Render
+
+---
+
+## Security
+
+- **Prompt injection prevention** -- System prompt uses strict role separation; user text is treated as content, never as instructions. Pattern detection flags suspicious inputs.
+- **Input sanitization** -- Special character ratio analysis, repeated pattern detection, and length bounds enforced via Pydantic validators on the server.
+- **API key isolation** -- The OpenAI key lives exclusively on the backend. The frontend never touches it.
+- **CORS allowlist** -- Only `localhost` and `*.vercel.app` origins are permitted. Additional origins can be added via the `ALLOWED_ORIGINS` env var.
+- **Error opacity** -- Detailed errors are logged server-side; clients receive generic messages only.
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Write tests for your changes
+4. Ensure all checks pass: `pytest` + `npm test` + `npm run e2e`
+5. Open a pull request
+
+All PRs must pass CI (lint, test, build) before merging.
+
+---
+
+## License
+
+[MIT](LICENSE)
