@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "vercel": {
+      "command": "bash",
+      "args": ["-c", "export NODE_OPTIONS='--max-old-space-size=128'; source ~/.claude/secrets/.mcp-secrets-resolved.env 2>/dev/null || source ~/.claude/secrets/.mcp-env.sh 2>/dev/null; exec npx -y vercel-mcp@latest"],
+      "env": { "VERCEL_TOKEN": "${VERCEL_TOKEN}" }
+    }
+  },
+  "_metadata": {
+    "project": "smart-summary-app",
+    "description": "Full-stack AI summarization with SSE streaming",
+    "tech_stack": {
+      "frontend": "Next.js 16, React 19, TailwindCSS",
+      "backend": "FastAPI, OpenAI SDK",
+      "deployment": "Vercel (frontend), Render (backend)"
+    },
+    "recommended_agents": ["fullstack-developer", "ai-engineer", "nextjs-developer"]
+  }
+}
