@@ -1,0 +1,44 @@
+include:
+  - docker-compose.api.yml
+  - docker-compose.app.yml
+
+services:
+  api:
+    networks:
+      - default
+      - shared-db
+      - traefik-network
+      - monitoring-internal
+    labels:
+      - "logging=promtail"
+      - "service=smartsummary-api"
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-network"
+      - "traefik.http.routers.smartsummary-api.rule=Host(`api.smartsummary.dev.willianpinho.com`)"
+      - "traefik.http.routers.smartsummary-api.tls=true"
+      - "traefik.http.services.smartsummary-api.loadbalancer.server.port=8000"
+
+  app:
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - default
+      - traefik-network
+    labels:
+      - "logging=promtail"
+      - "service=smartsummary-app"
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-network"
+      - "traefik.http.routers.smartsummary-app.rule=Host(`app.smartsummary.dev.willianpinho.com`)"
+      - "traefik.http.routers.smartsummary-app.tls=true"
+      - "traefik.http.services.smartsummary-app.loadbalancer.server.port=3000"
+
+networks:
+  traefik-network:
+    external: true
+  shared-db:
+    external: true
+  monitoring-internal:
+    external: true
+    name: monitoring_monitoring-internal
