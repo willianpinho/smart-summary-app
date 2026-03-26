@@ -7,6 +7,9 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.smartsummary.dev.willianpinho.com}
     container_name: smartsummary-app
+    environment:
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
     ports:
       - "127.0.0.1:3300:3000"
     healthcheck:
