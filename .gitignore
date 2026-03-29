@@ -51,5 +51,8 @@ htmlcov/
 *~
 .DS_Store
 
+# Claude Code
+.mcp.json
+
 # Misc
 *.pem
