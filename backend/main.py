@@ -6,12 +6,15 @@ import os
 import re
 import logging
 from typing import AsyncGenerator
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +23,10 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv(dotenv_path="../.env")
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Smart Summary API", version="1.0.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS for Next.js frontend
 # Allow both localhost (development) and Vercel domains (production)
@@ -276,14 +282,15 @@ async def health_check():
 
 
 @app.post("/api/summarize")
-async def summarize_text(request: SummaryRequest):
+@limiter.limit("10/minute")
+async def summarize_text(request: Request, body: SummaryRequest = None):
     """
     Endpoint to generate streaming summary of text
     Returns Server-Sent Events (SSE) stream
     """
     try:
         return StreamingResponse(
-            generate_summary_stream(request.text),
+            generate_summary_stream(body.text),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
