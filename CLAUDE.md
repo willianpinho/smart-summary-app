@@ -6,7 +6,7 @@
 
 - **Frontend:** Next.js 16, React 19, TailwindCSS, TypeScript
 - **Backend:** FastAPI 0.115, OpenAI SDK, Pydantic, Uvicorn
-- **Deployment:** Vercel (frontend), Render (backend)
+- **Deployment:** VPS Docker (primary), Vercel (frontend fallback)
 - **Testing:** Vitest + Playwright (frontend), pytest (backend)
 
 ## Commands
@@ -61,3 +61,17 @@ OPENAI_API_KEY=sk-...
 ## Recommended Agents
 
 `fullstack-developer`, `ai-engineer`, `nextjs-developer`, `fastapi-expert`
+
+## VPS Deployment
+
+```bash
+# Deploy to VPS (Hetzner)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+# Frontend: smart-summary.dev.willianpinho.com (port 3000, standalone mode)
+# Backend: api.smart-summary.dev.willianpinho.com (port 8000)
+```
+
+- Frontend uses `HOSTNAME=0.0.0.0` for Next.js standalone server
+- Backend and frontend have separate Dockerfiles
+- GitHub Actions workflow: `.github/workflows/deploy-dev.yml`
