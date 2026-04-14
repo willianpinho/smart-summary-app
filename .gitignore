@@ -53,6 +53,7 @@ htmlcov/
 
 # Claude Code
 .mcp.json
+.claude/
 
 # Misc
 *.pem
