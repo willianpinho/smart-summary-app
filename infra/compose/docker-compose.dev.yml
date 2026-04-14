@@ -16,6 +16,7 @@ services:
       - "traefik.docker.network=traefik-network"
       - "traefik.http.routers.smartsummary-api.rule=Host(`api.smartsummary.dev.willianpinho.com`)"
       - "traefik.http.routers.smartsummary-api.tls=true"
+      - "traefik.http.routers.smartsummary-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.smartsummary-api.loadbalancer.server.port=8000"
 
   app:
@@ -32,6 +33,7 @@ services:
       - "traefik.docker.network=traefik-network"
       - "traefik.http.routers.smartsummary-app.rule=Host(`app.smartsummary.dev.willianpinho.com`)"
       - "traefik.http.routers.smartsummary-app.tls=true"
+      - "traefik.http.routers.smartsummary-app.tls.certresolver=letsencrypt"
       - "traefik.http.services.smartsummary-app.loadbalancer.server.port=3000"
 
 networks:
