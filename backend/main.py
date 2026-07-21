@@ -30,10 +30,11 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS for Next.js frontend
-# Allow both localhost (development) and Vercel domains (production)
+# Allow localhost (development) and the production frontend
 allowed_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://smartsummary.dev.willianpinho.com",
 ]
 
 # Get additional origins from environment variable if set
@@ -43,29 +44,9 @@ if env_origins:
     allowed_origins.extend([origin.strip() for origin in env_origins.split(",")])
 
 
-# For Vercel preview deployments, we need to check origins dynamically
-# Since CORS doesn't support wildcard patterns like https://*.vercel.app
-def cors_origin_validator(origin: str) -> bool:
-    """
-    Validate if origin is allowed
-    Supports dynamic Vercel preview deployments
-    """
-    # Check static allowed origins
-    if origin in allowed_origins:
-        return True
-
-    # Check Vercel preview deployments (any subdomain of vercel.app)
-    if origin.startswith("https://") and origin.endswith(".vercel.app"):
-        return True
-
-    return False
-
-
-# Apply CORS middleware with dynamic origin validation
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel deployments
-    allow_origins=allowed_origins,  # Allow specific origins
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
