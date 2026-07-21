@@ -11,6 +11,8 @@ Paste any text and watch a structured, markdown-formatted summary materialize wo
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+🔗 **Live Demo:** [https://smart-summary.dev.willianpinho.com](https://smart-summary.dev.willianpinho.com)
+
 ---
 
 ## Demo
