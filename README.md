@@ -30,7 +30,7 @@ Paste any text and watch a structured, markdown-formatted summary materialize wo
 | **Dark mode**                   | System-aware theme switching with Tailwind                                                          |
 | **Copy to clipboard**           | One-click copy of the generated summary                                                             |
 | **Example text loader**         | Pre-loaded sample text for instant demo                                                             |
-| **CORS security**               | Allowlist restricted to `localhost` and `*.vercel.app` origins                                      |
+| **CORS security**               | Allowlist restricted to `localhost` and the production frontend origin                              |
 
 ---
 
@@ -70,15 +70,15 @@ Paste any text and watch a structured, markdown-formatted summary materialize wo
 
 ## Tech Stack
 
-| Layer        | Technology                                      | Purpose                              |
-| ------------ | ----------------------------------------------- | ------------------------------------ |
-| **Frontend** | Next.js 16, React 19, TypeScript 5.6            | App Router, server/client components |
-| **Styling**  | Tailwind CSS, `@tailwindcss/typography`         | Utility-first CSS, prose rendering   |
-| **Backend**  | FastAPI 0.115, Python 3.11, Pydantic 2.9        | Async API, streaming, validation     |
-| **AI**       | OpenAI SDK, GPT-4o-mini                         | Chat completions with streaming      |
-| **Testing**  | Jest, React Testing Library, Playwright, Pytest | Unit, component, E2E, API tests      |
-| **CI/CD**    | GitHub Actions                                  | Lint, test, build, deploy            |
-| **Hosting**  | Vercel (frontend), Render (backend)             | Edge deployment, managed Python      |
+| Layer        | Technology                                                    | Purpose                              |
+| ------------ | ------------------------------------------------------------- | ------------------------------------ |
+| **Frontend** | Next.js 16, React 19, TypeScript 5.6                          | App Router, server/client components |
+| **Styling**  | Tailwind CSS, `@tailwindcss/typography`                       | Utility-first CSS, prose rendering   |
+| **Backend**  | FastAPI 0.115, Python 3.11, Pydantic 2.9                      | Async API, streaming, validation     |
+| **AI**       | OpenAI SDK, GPT-4o-mini                                       | Chat completions with streaming      |
+| **Testing**  | Jest, React Testing Library, Playwright, Pytest               | Unit, component, E2E, API tests      |
+| **CI/CD**    | GitHub Actions                                                | Lint, test, build, deploy            |
+| **Hosting**  | Hetzner VPS via Docker (frontend + backend), Render (backend) | Self-hosted deploy, managed Python   |
 
 ---
 
@@ -262,7 +262,6 @@ smart-summary-app/
 │   └── tailwind.config.js
 │
 ├── .github/workflows/          # CI/CD pipeline
-├── vercel.json                 # Vercel deployment config
 ├── render.yaml                 # Render deployment config
 └── README.md
 ```
@@ -271,19 +270,16 @@ smart-summary-app/
 
 ## Deployment
 
-### Frontend (Vercel)
+### Hetzner VPS (Docker)
 
-The frontend deploys automatically on push to `main` via Vercel's GitHub integration. Configuration lives in `vercel.json`.
+Push to the `development` branch triggers `.github/workflows/deploy-dev.yml`: it builds Docker images for both `backend/Dockerfile` and `frontend/Dockerfile`, pushes them to GHCR, and deploys both to the Hetzner VPS via SSH.
 
-Set the build-time environment variable:
-
-```
-NEXT_PUBLIC_API_URL=https://your-backend.onrender.com
-```
+- Frontend: `smartsummary.dev.willianpinho.com`
+- Backend: `api.smartsummary.dev.willianpinho.com`
 
 ### Backend (Render)
 
-The backend deploys automatically via `render.yaml`. Set the following environment variable in the Render dashboard:
+The backend also deploys automatically via `render.yaml` on push to `main`. Set the following environment variable in the Render dashboard:
 
 ```
 OPENAI_API_KEY=sk-...
@@ -291,12 +287,12 @@ OPENAI_API_KEY=sk-...
 
 ### CI/CD Pipeline
 
-Every push and pull request triggers the GitHub Actions workflow:
+Every push and pull request triggers the GitHub Actions workflow (`.github/workflows/ci.yml`):
 
-1. **Lint** -- ESLint (frontend), formatting checks
+1. **Lint** -- ESLint (frontend), flake8 (backend)
 2. **Test** -- Pytest (backend), Jest (frontend), Playwright (E2E)
 3. **Build** -- Next.js production build
-4. **Deploy** -- Automatic on `main` via Vercel and Render
+4. **Deploy** -- Automatic on `main` via Render (backend); the VPS deploy runs separately from `deploy-dev.yml` on push to `development`
 
 ---
 
@@ -305,7 +301,7 @@ Every push and pull request triggers the GitHub Actions workflow:
 - **Prompt injection prevention** -- System prompt uses strict role separation; user text is treated as content, never as instructions. Pattern detection flags suspicious inputs.
 - **Input sanitization** -- Special character ratio analysis, repeated pattern detection, and length bounds enforced via Pydantic validators on the server.
 - **API key isolation** -- The OpenAI key lives exclusively on the backend. The frontend never touches it.
-- **CORS allowlist** -- Only `localhost` and `*.vercel.app` origins are permitted. Additional origins can be added via the `ALLOWED_ORIGINS` env var.
+- **CORS allowlist** -- Only `localhost` and the production frontend origin are permitted. Additional origins can be added via the `ALLOWED_ORIGINS` env var.
 - **Error opacity** -- Detailed errors are logged server-side; clients receive generic messages only.
 
 ---

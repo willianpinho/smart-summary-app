@@ -6,7 +6,7 @@
 
 - **Frontend:** Next.js 16, React 19, TailwindCSS, TypeScript
 - **Backend:** FastAPI 0.115, OpenAI SDK, Pydantic, Uvicorn
-- **Deployment:** VPS Docker (primary), Vercel (frontend fallback)
+- **Deployment:** Hetzner VPS via Docker (frontend + backend, `deploy-dev.yml`), backend also on Render
 - **Testing:** Jest + React Testing Library + Playwright (frontend), pytest (backend)
 
 ## Commands
@@ -42,8 +42,7 @@ frontend/                   # Next.js 16 App Router
 ├── lib/                    # Utilities (config.ts)
 ├── __tests__/              # Jest + RTL unit tests
 ├── e2e/                    # Playwright E2E tests
-├── playwright.config.ts    # E2E config
-└── vercel.json             # Vercel deployment
+└── playwright.config.ts    # E2E config
 
 backend/                    # FastAPI
 ├── main.py                 # App entry point (routes, validation, streaming)
