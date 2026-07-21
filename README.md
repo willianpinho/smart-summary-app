@@ -276,8 +276,8 @@ smart-summary-app/
 
 Push to the `development` branch triggers `.github/workflows/deploy-dev.yml`: it builds Docker images for both `backend/Dockerfile` and `frontend/Dockerfile`, pushes them to GHCR, and deploys both to the Hetzner VPS via SSH.
 
-- Frontend: `smartsummary.dev.willianpinho.com`
-- Backend: `api.smartsummary.dev.willianpinho.com`
+- Frontend: `smart-summary.dev.willianpinho.com`
+- Backend: `api.smart-summary.dev.willianpinho.com`
 
 ### Backend (Render)
 

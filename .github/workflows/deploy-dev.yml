@@ -9,7 +9,7 @@
 #   DEV_SSH_KEY    — SSH private key for deployment
 #
 # Required GitHub Variables (Settings > Environments > development > Variables):
-#   NEXT_PUBLIC_API_URL — https://api.smartsummary.dev.willianpinho.com
+#   NEXT_PUBLIC_API_URL — https://api.smart-summary.dev.willianpinho.com
 
 name: Deploy Dev
 
@@ -115,7 +115,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image }}-dev
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}-dev
           build-args: |
-            ${{ matrix.image == 'app' && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || 'https://api.smartsummary.dev.willianpinho.com') || '' }}
+            ${{ matrix.image == 'app' && format('NEXT_PUBLIC_API_URL={0}', vars.NEXT_PUBLIC_API_URL || 'https://api.smart-summary.dev.willianpinho.com') || '' }}
 
   # --- Deploy to Hetzner VPS ---
   deploy:
