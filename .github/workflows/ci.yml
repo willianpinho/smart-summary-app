@@ -84,6 +84,7 @@ jobs:
     needs: [frontend-test, backend-test]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +113,7 @@ jobs:
     needs: [frontend-test, backend-test]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -126,16 +128,3 @@ jobs:
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{}'
-
-  # Notification
-  notify:
-    name: Notify Deployment Status
-    needs: [deploy-frontend, deploy-backend]
-    runs-on: ubuntu-latest
-    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Deployment Status
-        run: |
-          echo "Frontend deployment: ${{ needs.deploy-frontend.result }}"
-          echo "Backend deployment: ${{ needs.deploy-backend.result }}"
