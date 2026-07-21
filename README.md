@@ -21,16 +21,16 @@ Paste any text and watch a structured, markdown-formatted summary materialize wo
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| **Real-time streaming** | SSE-based progressive text rendering -- summary appears word by word |
-| **Markdown output** | Structured summaries with headers, bold highlights, and bullet points via `@tailwindcss/typography` |
-| **Prompt injection prevention** | Multi-layer defense: system prompt isolation, pattern detection, special character ratio checks |
-| **Input validation** | 10--50,000 character range enforced on both client and server |
-| **Dark mode** | System-aware theme switching with Tailwind |
-| **Copy to clipboard** | One-click copy of the generated summary |
-| **Example text loader** | Pre-loaded sample text for instant demo |
-| **CORS security** | Allowlist restricted to `localhost` and `*.vercel.app` origins |
+| Feature                         | Description                                                                                         |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Real-time streaming**         | SSE-based progressive text rendering -- summary appears word by word                                |
+| **Markdown output**             | Structured summaries with headers, bold highlights, and bullet points via `@tailwindcss/typography` |
+| **Prompt injection prevention** | Multi-layer defense: system prompt isolation, pattern detection, special character ratio checks     |
+| **Input validation**            | 10--50,000 character range enforced on both client and server                                       |
+| **Dark mode**                   | System-aware theme switching with Tailwind                                                          |
+| **Copy to clipboard**           | One-click copy of the generated summary                                                             |
+| **Example text loader**         | Pre-loaded sample text for instant demo                                                             |
+| **CORS security**               | Allowlist restricted to `localhost` and `*.vercel.app` origins                                      |
 
 ---
 
@@ -53,32 +53,32 @@ Paste any text and watch a structured, markdown-formatted summary materialize wo
 2. Client-side validation enforces length and format constraints
 3. `POST /api/summarize` sends the text to FastAPI
 4. Server-side validation runs prompt injection detection and input sanitization
-5. FastAPI streams a chat completion request to OpenAI (GPT-4o-mini, temperature 0.3)
-6. Tokens are accumulated, formatted with markdown post-processing, then re-streamed as SSE chunks
-7. The frontend renders the summary progressively with `@tailwindcss/typography`
+5. FastAPI opens a streaming chat completion request to OpenAI (GPT-4o-mini, temperature 0.3)
+6. Each token is relayed to the client as its own SSE event the moment it arrives -- no server-side buffering
+7. The frontend renders the summary progressively with `react-markdown` and `@tailwindcss/typography`
 
 ### Key Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| **FastAPI middleware layer** | Keeps the OpenAI API key server-side, centralizes validation, enables logging and rate limiting without exposing secrets to the browser |
-| **SSE over WebSockets** | Summarization is unidirectional (server to client). SSE is simpler, has native browser support via `EventSource`, and avoids the connection management overhead of WebSockets |
-| **GPT-4o-mini** | Optimal cost-quality tradeoff for summarization ($0.15/1M input tokens, sub-2s latency) |
-| **Markdown post-processing** | The LLM output is reformatted server-side (`format_markdown_with_breaks`) to ensure consistent heading spacing and bullet structure before streaming |
+| Decision                     | Rationale                                                                                                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **FastAPI middleware layer** | Keeps the OpenAI API key server-side, centralizes validation, enables logging and rate limiting without exposing secrets to the browser                                       |
+| **SSE over WebSockets**      | Summarization is unidirectional (server to client). SSE is simpler, has native browser support via `EventSource`, and avoids the connection management overhead of WebSockets |
+| **GPT-4o-mini**              | Optimal cost-quality tradeoff for summarization ($0.15/1M input tokens, sub-2s latency)                                                                                       |
+| **True token streaming**     | Each OpenAI delta is forwarded to the client immediately (`async for chunk in stream: yield ...`), so time-to-first-token reflects real generation, not the full completion   |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | Next.js 16, React 19, TypeScript 5.6 | App Router, server/client components |
-| **Styling** | Tailwind CSS, `@tailwindcss/typography` | Utility-first CSS, prose rendering |
-| **Backend** | FastAPI 0.115, Python 3.11, Pydantic 2.9 | Async API, streaming, validation |
-| **AI** | OpenAI SDK, GPT-4o-mini | Chat completions with streaming |
-| **Testing** | Jest, React Testing Library, Playwright, Pytest | Unit, component, E2E, API tests |
-| **CI/CD** | GitHub Actions | Lint, test, build, deploy |
-| **Hosting** | Vercel (frontend), Render (backend) | Edge deployment, managed Python |
+| Layer        | Technology                                      | Purpose                              |
+| ------------ | ----------------------------------------------- | ------------------------------------ |
+| **Frontend** | Next.js 16, React 19, TypeScript 5.6            | App Router, server/client components |
+| **Styling**  | Tailwind CSS, `@tailwindcss/typography`         | Utility-first CSS, prose rendering   |
+| **Backend**  | FastAPI 0.115, Python 3.11, Pydantic 2.9        | Async API, streaming, validation     |
+| **AI**       | OpenAI SDK, GPT-4o-mini                         | Chat completions with streaming      |
+| **Testing**  | Jest, React Testing Library, Playwright, Pytest | Unit, component, E2E, API tests      |
+| **CI/CD**    | GitHub Actions                                  | Lint, test, build, deploy            |
+| **Hosting**  | Vercel (frontend), Render (backend)             | Edge deployment, managed Python      |
 
 ---
 
@@ -86,7 +86,7 @@ Paste any text and watch a structured, markdown-formatted summary materialize wo
 
 ### Prerequisites
 
-- Node.js 18+ and npm (or pnpm)
+- Node.js 18+ and pnpm
 - Python 3.11+
 - An [OpenAI API key](https://platform.openai.com/api-keys)
 
@@ -122,8 +122,8 @@ The API will be available at `http://localhost:8000` with interactive docs at `h
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:3000` in your browser.
@@ -132,11 +132,11 @@ Open `http://localhost:3000` in your browser.
 
 ## Environment Variables
 
-| Variable | Location | Required | Default | Description |
-|----------|----------|----------|---------|-------------|
-| `OPENAI_API_KEY` | Backend `.env` | Yes | -- | OpenAI API key for GPT-4o-mini |
-| `NEXT_PUBLIC_API_URL` | Frontend `.env` | No | `http://localhost:8000` | Backend API base URL |
-| `ALLOWED_ORIGINS` | Backend `.env` | No | -- | Comma-separated additional CORS origins |
+| Variable              | Location        | Required | Default                 | Description                             |
+| --------------------- | --------------- | -------- | ----------------------- | --------------------------------------- |
+| `OPENAI_API_KEY`      | Backend `.env`  | Yes      | --                      | OpenAI API key for GPT-4o-mini          |
+| `NEXT_PUBLIC_API_URL` | Frontend `.env` | No       | `http://localhost:8000` | Backend API base URL                    |
+| `ALLOWED_ORIGINS`     | Backend `.env`  | No       | --                      | Comma-separated additional CORS origins |
 
 ---
 
@@ -161,9 +161,9 @@ Covers: endpoint responses, input validation, prompt injection prevention, SSE s
 ```bash
 cd frontend
 
-npm test                  # Run all unit tests
-npm run test:watch        # Watch mode
-npm run test:coverage     # Coverage report
+pnpm test                 # Run all unit tests
+pnpm test:watch           # Watch mode
+pnpm test:coverage        # Coverage report
 ```
 
 Covers: component rendering, form validation, streaming display, snapshot regression.
@@ -173,9 +173,9 @@ Covers: component rendering, form validation, streaming display, snapshot regres
 ```bash
 cd frontend
 
-npx playwright install    # First time only
-npm run e2e               # Headless
-npm run e2e:ui            # Interactive UI mode
+pnpm exec playwright install  # First time only
+pnpm e2e                      # Headless
+pnpm e2e:ui                   # Interactive UI mode
 ```
 
 Covers: full summarization flow, error states, clipboard copy, dark mode, responsive layout.
@@ -197,7 +197,11 @@ Health check.
 Detailed health check including OpenAI configuration status.
 
 ```json
-{ "status": "healthy", "openai_configured": true, "service": "Smart Summary API" }
+{
+  "status": "healthy",
+  "openai_configured": true,
+  "service": "Smart Summary API"
+}
 ```
 
 ### `POST /api/summarize`
@@ -210,22 +214,23 @@ Streams a markdown-formatted summary via Server-Sent Events.
 { "text": "Your long text here (10-50,000 characters)..." }
 ```
 
-**Response** (`text/event-stream`):
+**Response** (`text/event-stream`, one event per OpenAI token as it arrives):
 
 ```
-data: ## Over
-data: view\n\nTh
-data: is is a su
-data: mmary...
+data: ##
+data:  Overview
+data: \n\nThis
+data:  is a
+data:  summary...
 data: [DONE]
 ```
 
 **Error codes:**
 
-| Status | Reason |
-|--------|--------|
-| `422` | Validation error -- text too short, too long, or suspicious patterns detected |
-| `500` | Internal server error (logged server-side, generic message returned) |
+| Status | Reason                                                                        |
+| ------ | ----------------------------------------------------------------------------- |
+| `422`  | Validation error -- text too short, too long, or suspicious patterns detected |
+| `500`  | Internal server error (logged server-side, generic message returned)          |
 
 ---
 
@@ -310,7 +315,7 @@ Every push and pull request triggers the GitHub Actions workflow:
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
 3. Write tests for your changes
-4. Ensure all checks pass: `pytest` + `npm test` + `npm run e2e`
+4. Ensure all checks pass: `pytest` + `pnpm test` + `pnpm e2e`
 5. Open a pull request
 
 All PRs must pass CI (lint, test, build) before merging.

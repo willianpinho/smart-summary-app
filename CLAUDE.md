@@ -7,22 +7,24 @@
 - **Frontend:** Next.js 16, React 19, TailwindCSS, TypeScript
 - **Backend:** FastAPI 0.115, OpenAI SDK, Pydantic, Uvicorn
 - **Deployment:** VPS Docker (primary), Vercel (frontend fallback)
-- **Testing:** Vitest + Playwright (frontend), pytest (backend)
+- **Testing:** Jest + React Testing Library + Playwright (frontend), pytest (backend)
 
 ## Commands
 
 ### Frontend
+
 ```bash
 cd frontend
 pnpm install
 pnpm dev                    # http://localhost:3000
 pnpm build                  # Production build
-pnpm test                   # Vitest unit tests
-pnpm test:e2e               # Playwright E2E
+pnpm test                   # Jest unit tests
+pnpm e2e                    # Playwright E2E
 pnpm test:coverage          # Coverage report
 ```
 
 ### Backend
+
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -35,16 +37,17 @@ pytest --cov                # Coverage
 
 ```
 frontend/                   # Next.js 16 App Router
-├── src/app/                # Pages
-├── src/components/         # React components
-├── src/lib/                # Utilities
+├── app/                    # Pages (page.tsx, layout.tsx, globals.css)
+├── components/             # React components
+├── lib/                    # Utilities (config.ts)
+├── __tests__/              # Jest + RTL unit tests
+├── e2e/                    # Playwright E2E tests
 ├── playwright.config.ts    # E2E config
 └── vercel.json             # Vercel deployment
 
 backend/                    # FastAPI
-├── main.py                 # App entry point
-├── services/               # OpenAI summarization logic
-├── models/                 # Pydantic schemas
+├── main.py                 # App entry point (routes, validation, streaming)
+├── test_main.py            # pytest suite
 └── requirements.txt        # Python dependencies
 ```
 
