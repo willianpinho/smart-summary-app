@@ -13,9 +13,11 @@ Paste any text and watch a structured, markdown-formatted summary materialize wo
 
 ---
 
-## Screenshots
+## Demo
 
-> _Coming soon -- screenshots of the summarization interface, streaming in action, and dark mode._
+![Smart Summary streaming a summary in real time — SSE tokens rendering section by section with a live progress bar](docs/demo/streaming.gif)
+
+_Real-time SSE streaming: the summary renders section by section as tokens arrive from the model — a live progress bar tracks words and characters as they land._
 
 ---
 
