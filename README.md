@@ -11,6 +11,8 @@ Paste any text and watch a structured, markdown-formatted summary materialize wo
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+🔗 **Live Demo:** [https://smart-summary.dev.willianpinho.com](https://smart-summary.dev.willianpinho.com)
+
 ---
 
 ## Demo
@@ -276,8 +278,8 @@ smart-summary-app/
 
 Push to the `development` branch triggers `.github/workflows/deploy-dev.yml`: it builds Docker images for both `backend/Dockerfile` and `frontend/Dockerfile`, pushes them to GHCR, and deploys both to the Hetzner VPS via SSH.
 
-- Frontend: `smartsummary.dev.willianpinho.com`
-- Backend: `api.smartsummary.dev.willianpinho.com`
+- Frontend: `smart-summary.dev.willianpinho.com`
+- Backend: `api.smart-summary.dev.willianpinho.com`
 
 ### Backend (Render)
 
