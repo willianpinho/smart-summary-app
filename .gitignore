@@ -34,7 +34,6 @@ wheels/
 # Next.js
 .next/
 out/
-.vercel
 
 # Testing
 coverage/
