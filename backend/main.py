@@ -69,19 +69,20 @@ class SummaryRequest(BaseModel):
     @field_validator("text")
     @classmethod
     def validate_text(cls, v: str) -> str:
-        """Validate and sanitize input text to prevent prompt injection"""
+        """Basic input sanity check (NOT a prompt injection defense).
+
+        This only rejects an obvious spam/DoS pattern (a single character
+        repeated 50+ times in a row) and enforces the length bounds above.
+        Legitimate punctuation-heavy input -- code snippets, JSON, math,
+        markdown tables -- passes through unmodified. The actual defense
+        against prompt injection is system-prompt role isolation in
+        `create_safe_prompt`, not input filtering.
+        """
         if not v or not v.strip():
             raise ValueError("Text cannot be empty")
 
-        # Remove potentially malicious patterns
-        # Check for excessive special characters that might indicate injection attempts
-        special_char_ratio = sum(
-            1 for c in v if not c.isalnum() and not c.isspace()
-        ) / len(v)
-        if special_char_ratio > 0.5:
-            raise ValueError("Text contains excessive special characters")
-
-        # Limit repeated characters (potential injection pattern)
+        # Reject a single character repeated 50+ times in a row (spam/DoS
+        # pattern, not something legitimate text ever needs)
         if re.search(r"(.)\1{50,}", v):
             raise ValueError("Text contains suspicious repeated patterns")
 
