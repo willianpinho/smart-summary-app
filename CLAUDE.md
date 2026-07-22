@@ -67,8 +67,8 @@ OPENAI_API_KEY=sk-...
 ## VPS Deployment
 
 ```bash
-# Deploy to VPS (Hetzner)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Deploy to VPS (Hetzner), from infra/compose/
+docker compose -f docker-compose.dev.yml up -d --no-build --remove-orphans
 
 # Frontend: smart-summary.dev.willianpinho.com (port 3000, standalone mode)
 # Backend: api.smart-summary.dev.willianpinho.com (port 8000)
