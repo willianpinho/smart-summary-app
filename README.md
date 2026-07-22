@@ -25,16 +25,16 @@ _Real-time SSE streaming: the summary renders section by section as tokens arriv
 
 ## Features
 
-| Feature                         | Description                                                                                         |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Real-time streaming**         | SSE-based progressive text rendering -- summary appears word by word                                |
-| **Markdown output**             | Structured summaries with headers, bold highlights, and bullet points via `@tailwindcss/typography` |
-| **Prompt injection prevention** | Multi-layer defense: system prompt isolation, pattern detection, special character ratio checks     |
-| **Input validation**            | 10--50,000 character range enforced on both client and server                                       |
-| **Dark mode**                   | System-aware theme switching with Tailwind                                                          |
-| **Copy to clipboard**           | One-click copy of the generated summary                                                             |
-| **Example text loader**         | Pre-loaded sample text for instant demo                                                             |
-| **CORS security**               | Allowlist restricted to `localhost` and the production frontend origin                              |
+| Feature                         | Description                                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Real-time streaming**         | SSE-based progressive text rendering -- summary appears word by word                                                  |
+| **Markdown output**             | Structured summaries with headers, bold highlights, and bullet points via `@tailwindcss/typography`                   |
+| **Prompt injection resistance** | System-prompt role isolation: the model is told the user's text is content to summarize, never instructions to follow |
+| **Input validation**            | 10--50,000 character range and a basic spam/DoS pattern check, enforced on both client and server                     |
+| **Dark mode**                   | System-aware theme switching with Tailwind                                                                            |
+| **Copy to clipboard**           | One-click copy of the generated summary                                                                               |
+| **Example text loader**         | Pre-loaded sample text for instant demo                                                                               |
+| **CORS security**               | Allowlist restricted to `localhost` and the production frontend origin                                                |
 
 ---
 
@@ -56,7 +56,7 @@ _Real-time SSE streaming: the summary renders section by section as tokens arriv
 1. User pastes text into the React form
 2. Client-side validation enforces length and format constraints
 3. `POST /api/summarize` sends the text to FastAPI
-4. Server-side validation runs prompt injection detection and input sanitization
+4. Server-side validation enforces length bounds and a basic spam pattern check; the system prompt isolates the user's text as content, not instructions
 5. FastAPI opens a streaming chat completion request to OpenAI (GPT-4o-mini, temperature 0.3)
 6. Each token is relayed to the client as its own SSE event the moment it arrives -- no server-side buffering
 7. The frontend renders the summary progressively with `react-markdown` and `@tailwindcss/typography`
@@ -146,7 +146,7 @@ Open `http://localhost:3000` in your browser.
 
 ## Testing
 
-The project maintains **62 tests** across three layers with 95%+ backend coverage.
+The project maintains **64 tests** across three layers with 89% backend coverage.
 
 ### Backend (24 tests)
 
@@ -158,9 +158,9 @@ pytest -v                                  # Run all tests
 pytest --cov=main --cov-report=term-missing  # With coverage report
 ```
 
-Covers: endpoint responses, input validation, prompt injection prevention, SSE streaming, error handling.
+Covers: endpoint responses, input validation, prompt safety (system-prompt isolation), SSE streaming, error handling.
 
-### Frontend Unit Tests (24 tests)
+### Frontend Unit Tests (26 tests)
 
 ```bash
 cd frontend
@@ -182,7 +182,7 @@ pnpm e2e                      # Headless
 pnpm e2e:ui                   # Interactive UI mode
 ```
 
-Covers: full summarization flow, error states, clipboard copy, dark mode, responsive layout.
+Covers: full summarization flow, form validation, example text loading, error states, clipboard copy.
 
 ---
 
