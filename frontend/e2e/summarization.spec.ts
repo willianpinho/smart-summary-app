@@ -11,7 +11,7 @@ test.describe('Smart Summary App E2E', () => {
   })
 
   test('displays the summary form', async ({ page }) => {
-    await expect(page.getByLabel(/enter your text to summarize/i)).toBeVisible()
+    await expect(page.getByLabel(/text to summarize/i)).toBeVisible()
     await expect(page.getByRole('button', { name: /generate summary/i })).toBeVisible()
   })
 
@@ -21,7 +21,7 @@ test.describe('Smart Summary App E2E', () => {
   })
 
   test('submit button is disabled with text below minimum length', async ({ page }) => {
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('Short')
 
     const submitButton = page.getByRole('button', { name: /generate summary/i })
@@ -29,7 +29,7 @@ test.describe('Smart Summary App E2E', () => {
   })
 
   test('submit button is enabled with valid text', async ({ page }) => {
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('This is a valid text input that meets the minimum length requirement.')
 
     const submitButton = page.getByRole('button', { name: /generate summary/i })
@@ -37,7 +37,7 @@ test.describe('Smart Summary App E2E', () => {
   })
 
   test('character count updates as user types', async ({ page }) => {
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('Hello World')
 
     await expect(page.getByText(/11/)).toBeVisible()
@@ -46,14 +46,14 @@ test.describe('Smart Summary App E2E', () => {
   test('loads example text when button clicked', async ({ page }) => {
     await page.getByText(/load example text/i).click()
 
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     const value = await textarea.inputValue()
     expect(value.length).toBeGreaterThan(100)
     expect(value).toContain('Artificial Intelligence')
   })
 
   test('clears text when clear button clicked', async ({ page }) => {
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('Some text to clear')
 
     await page.getByText(/clear/i).click()
@@ -73,7 +73,7 @@ test.describe('Smart Summary App E2E', () => {
       })
     })
 
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('This is a test text for summarization that meets minimum requirements.')
 
     const submitButton = page.getByRole('button', { name: /generate summary/i })
@@ -92,7 +92,7 @@ test.describe('Smart Summary App E2E', () => {
       })
     })
 
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('This is a long article about artificial intelligence and machine learning technologies.')
 
     const submitButton = page.getByRole('button', { name: /generate summary/i })
@@ -113,7 +113,7 @@ test.describe('Smart Summary App E2E', () => {
       })
     })
 
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('This text will trigger an error for testing purposes.')
 
     const submitButton = page.getByRole('button', { name: /generate summary/i })
@@ -132,7 +132,7 @@ test.describe('Smart Summary App E2E', () => {
       })
     })
 
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('Text for testing copy functionality with proper length.')
 
     await page.getByRole('button', { name: /generate summary/i }).click()
@@ -159,7 +159,7 @@ test.describe('Smart Summary App E2E', () => {
       })
     })
 
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('Text for testing disclaimer visibility.')
 
     await page.getByRole('button', { name: /generate summary/i }).click()
@@ -179,7 +179,7 @@ test.describe('Smart Summary App E2E', () => {
       })
     })
 
-    const textarea = page.getByLabel(/enter your text to summarize/i)
+    const textarea = page.getByLabel(/text to summarize/i)
 
     // First request
     await textarea.fill('First text for summarization testing.')
