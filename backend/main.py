@@ -34,7 +34,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 allowed_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://smartsummary.dev.willianpinho.com",
+    "https://smart-summary.dev.willianpinho.com",
 ]
 
 # Get additional origins from environment variable if set
@@ -69,19 +69,20 @@ class SummaryRequest(BaseModel):
     @field_validator("text")
     @classmethod
     def validate_text(cls, v: str) -> str:
-        """Validate and sanitize input text to prevent prompt injection"""
+        """Basic input sanity check (NOT a prompt injection defense).
+
+        This only rejects an obvious spam/DoS pattern (a single character
+        repeated 50+ times in a row) and enforces the length bounds above.
+        Legitimate punctuation-heavy input -- code snippets, JSON, math,
+        markdown tables -- passes through unmodified. The actual defense
+        against prompt injection is system-prompt role isolation in
+        `create_safe_prompt`, not input filtering.
+        """
         if not v or not v.strip():
             raise ValueError("Text cannot be empty")
 
-        # Remove potentially malicious patterns
-        # Check for excessive special characters that might indicate injection attempts
-        special_char_ratio = sum(
-            1 for c in v if not c.isalnum() and not c.isspace()
-        ) / len(v)
-        if special_char_ratio > 0.5:
-            raise ValueError("Text contains excessive special characters")
-
-        # Limit repeated characters (potential injection pattern)
+        # Reject a single character repeated 50+ times in a row (spam/DoS
+        # pattern, not something legitimate text ever needs)
         if re.search(r"(.)\1{50,}", v):
             raise ValueError("Text contains suspicious repeated patterns")
 
@@ -201,8 +202,11 @@ async def generate_summary_stream(text: str) -> AsyncGenerator[str, None]:
         yield "data: [DONE]\n\n"
 
     except Exception as e:
-        error_message = f"Error generating summary: {str(e)}"
-        yield f"data: [ERROR] {error_message}\n\n"
+        # Log the real exception server-side; never forward raw exception
+        # text to the client (it can leak internals -- stack traces, model
+        # names, upstream error bodies).
+        logger.error("Error generating summary: %s", e, exc_info=True)
+        yield "data: [ERROR] An error occurred while generating the summary. Please try again.\n\n"
 
 
 @app.get("/")
@@ -239,10 +243,12 @@ async def summarize_text(request: Request, body: SummaryRequest = None):
                 "X-Accel-Buffering": "no",  # Disable nginx buffering
             },
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        # Note: SummaryRequest validation errors never reach this block --
+        # Pydantic raises them before the endpoint runs, and FastAPI turns
+        # them into a 422 response automatically.
+        logger.error("Unexpected error in summarize_text: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -40,8 +40,9 @@ jobs:
       - name: Build
         run: pnpm run build
         env:
-          # Use production URL for CI builds to match deployment environment
-          NEXT_PUBLIC_API_URL: https://smart-summary-app.onrender.com
+          # Use the canonical production API URL for CI builds to match
+          # the Hetzner deployment (the only backend deploy target)
+          NEXT_PUBLIC_API_URL: https://api.smart-summary.dev.willianpinho.com
 
   # Backend Tests and Lint
   backend-test:
@@ -76,26 +77,3 @@ jobs:
           pytest test_main.py --cov=main --cov-report=xml --cov-report=term
         env:
           OPENAI_API_KEY: test_key
-          ANTHROPIC_API_KEY: test_key
-
-  # Deploy Backend to Render
-  deploy-backend:
-    name: Deploy Backend to Render
-    needs: [frontend-test, backend-test]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    continue-on-error: true
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Render
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
-        run: |
-          curl -X POST \
-            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{}'

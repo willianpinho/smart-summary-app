@@ -25,16 +25,16 @@ _Real-time SSE streaming: the summary renders section by section as tokens arriv
 
 ## Features
 
-| Feature                         | Description                                                                                         |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Real-time streaming**         | SSE-based progressive text rendering -- summary appears word by word                                |
-| **Markdown output**             | Structured summaries with headers, bold highlights, and bullet points via `@tailwindcss/typography` |
-| **Prompt injection prevention** | Multi-layer defense: system prompt isolation, pattern detection, special character ratio checks     |
-| **Input validation**            | 10--50,000 character range enforced on both client and server                                       |
-| **Dark mode**                   | System-aware theme switching with Tailwind                                                          |
-| **Copy to clipboard**           | One-click copy of the generated summary                                                             |
-| **Example text loader**         | Pre-loaded sample text for instant demo                                                             |
-| **CORS security**               | Allowlist restricted to `localhost` and the production frontend origin                              |
+| Feature                         | Description                                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Real-time streaming**         | SSE-based progressive text rendering -- summary appears word by word                                                  |
+| **Markdown output**             | Structured summaries with headers, bold highlights, and bullet points via `@tailwindcss/typography`                   |
+| **Prompt injection resistance** | System-prompt role isolation: the model is told the user's text is content to summarize, never instructions to follow |
+| **Input validation**            | 10--50,000 character range and a basic spam/DoS pattern check, enforced on both client and server                     |
+| **Dark mode**                   | System-aware theme switching with Tailwind                                                                            |
+| **Copy to clipboard**           | One-click copy of the generated summary                                                                               |
+| **Example text loader**         | Pre-loaded sample text for instant demo                                                                               |
+| **CORS security**               | Allowlist restricted to `localhost` and the production frontend origin                                                |
 
 ---
 
@@ -56,7 +56,7 @@ _Real-time SSE streaming: the summary renders section by section as tokens arriv
 1. User pastes text into the React form
 2. Client-side validation enforces length and format constraints
 3. `POST /api/summarize` sends the text to FastAPI
-4. Server-side validation runs prompt injection detection and input sanitization
+4. Server-side validation enforces length bounds and a basic spam pattern check; the system prompt isolates the user's text as content, not instructions
 5. FastAPI opens a streaming chat completion request to OpenAI (GPT-4o-mini, temperature 0.3)
 6. Each token is relayed to the client as its own SSE event the moment it arrives -- no server-side buffering
 7. The frontend renders the summary progressively with `react-markdown` and `@tailwindcss/typography`
@@ -74,15 +74,15 @@ _Real-time SSE streaming: the summary renders section by section as tokens arriv
 
 ## Tech Stack
 
-| Layer        | Technology                                                    | Purpose                              |
-| ------------ | ------------------------------------------------------------- | ------------------------------------ |
-| **Frontend** | Next.js 16, React 19, TypeScript 5.6                          | App Router, server/client components |
-| **Styling**  | Tailwind CSS, `@tailwindcss/typography`                       | Utility-first CSS, prose rendering   |
-| **Backend**  | FastAPI 0.115, Python 3.11, Pydantic 2.9                      | Async API, streaming, validation     |
-| **AI**       | OpenAI SDK, GPT-4o-mini                                       | Chat completions with streaming      |
-| **Testing**  | Jest, React Testing Library, Playwright, Pytest               | Unit, component, E2E, API tests      |
-| **CI/CD**    | GitHub Actions                                                | Lint, test, build, deploy            |
-| **Hosting**  | Hetzner VPS via Docker (frontend + backend), Render (backend) | Self-hosted deploy, managed Python   |
+| Layer        | Technology                                      | Purpose                              |
+| ------------ | ----------------------------------------------- | ------------------------------------ |
+| **Frontend** | Next.js 16, React 19, TypeScript 5.6            | App Router, server/client components |
+| **Styling**  | Tailwind CSS, `@tailwindcss/typography`         | Utility-first CSS, prose rendering   |
+| **Backend**  | FastAPI 0.115, Python 3.11, Pydantic 2.9        | Async API, streaming, validation     |
+| **AI**       | OpenAI SDK, GPT-4o-mini                         | Chat completions with streaming      |
+| **Testing**  | Jest, React Testing Library, Playwright, Pytest | Unit, component, E2E, API tests      |
+| **CI/CD**    | GitHub Actions                                  | Lint, test, build, deploy            |
+| **Hosting**  | Hetzner VPS via Docker (frontend + backend)     | Self-hosted deploy, single backend   |
 
 ---
 
@@ -146,7 +146,7 @@ Open `http://localhost:3000` in your browser.
 
 ## Testing
 
-The project maintains **62 tests** across three layers with 95%+ backend coverage.
+The project maintains **64 tests** across three layers with 89% backend coverage.
 
 ### Backend (24 tests)
 
@@ -158,9 +158,9 @@ pytest -v                                  # Run all tests
 pytest --cov=main --cov-report=term-missing  # With coverage report
 ```
 
-Covers: endpoint responses, input validation, prompt injection prevention, SSE streaming, error handling.
+Covers: endpoint responses, input validation, prompt safety (system-prompt isolation), SSE streaming, error handling.
 
-### Frontend Unit Tests (24 tests)
+### Frontend Unit Tests (26 tests)
 
 ```bash
 cd frontend
@@ -182,7 +182,7 @@ pnpm e2e                      # Headless
 pnpm e2e:ui                   # Interactive UI mode
 ```
 
-Covers: full summarization flow, error states, clipboard copy, dark mode, responsive layout.
+Covers: full summarization flow, form validation, example text loading, error states, clipboard copy.
 
 ---
 
@@ -266,7 +266,6 @@ smart-summary-app/
 │   └── tailwind.config.js
 │
 ├── .github/workflows/          # CI/CD pipeline
-├── render.yaml                 # Render deployment config
 └── README.md
 ```
 
@@ -274,36 +273,29 @@ smart-summary-app/
 
 ## Deployment
 
-### Hetzner VPS (Docker)
+### Hetzner VPS (Docker) -- canonical
 
-Push to the `development` branch triggers `.github/workflows/deploy-dev.yml`: it builds Docker images for both `backend/Dockerfile` and `frontend/Dockerfile`, pushes them to GHCR, and deploys both to the Hetzner VPS via SSH.
+Push to the `development` branch triggers `.github/workflows/deploy-dev.yml`: it builds Docker images for both `backend/Dockerfile` and `frontend/Dockerfile`, pushes them to GHCR, and deploys both to the Hetzner VPS via SSH. This is the only backend deploy target -- the domain below is what the live demo actually runs on, and matches the CORS allowlist and Traefik routing committed in this repo.
 
 - Frontend: `smart-summary.dev.willianpinho.com`
 - Backend: `api.smart-summary.dev.willianpinho.com`
 
-### Backend (Render)
-
-The backend also deploys automatically via `render.yaml` on push to `main`. Set the following environment variable in the Render dashboard:
-
-```
-OPENAI_API_KEY=sk-...
-```
-
-### CI/CD Pipeline
+### CI Pipeline
 
 Every push and pull request triggers the GitHub Actions workflow (`.github/workflows/ci.yml`):
 
 1. **Lint** -- ESLint (frontend), flake8 (backend)
 2. **Test** -- Pytest (backend), Jest (frontend), Playwright (E2E)
 3. **Build** -- Next.js production build
-4. **Deploy** -- Automatic on `main` via Render (backend); the VPS deploy runs separately from `deploy-dev.yml` on push to `development`
+
+CI does not deploy. Deployment to the Hetzner VPS runs separately via `deploy-dev.yml` on push to `development`.
 
 ---
 
 ## Security
 
-- **Prompt injection prevention** -- System prompt uses strict role separation; user text is treated as content, never as instructions. Pattern detection flags suspicious inputs.
-- **Input sanitization** -- Special character ratio analysis, repeated pattern detection, and length bounds enforced via Pydantic validators on the server.
+- **Prompt injection resistance** -- The system prompt uses strict role separation: the user's text is always framed as content to summarize, never as instructions to follow. This is the actual defense; there is no input-side prompt injection filter, and none of the checks below should be read as one.
+- **Input sanitization** -- Length bounds (10-50,000 chars) and a single spam/DoS pattern check (a character repeated 50+ times in a row) enforced via a Pydantic validator on the server. Punctuation-heavy legitimate content (code, JSON, math, markdown tables) is not rejected.
 - **API key isolation** -- The OpenAI key lives exclusively on the backend. The frontend never touches it.
 - **CORS allowlist** -- Only `localhost` and the production frontend origin are permitted. Additional origins can be added via the `ALLOWED_ORIGINS` env var.
 - **Error opacity** -- Detailed errors are logged server-side; clients receive generic messages only.
