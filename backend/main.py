@@ -34,7 +34,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 allowed_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://smartsummary.dev.willianpinho.com",
+    "https://smart-summary.dev.willianpinho.com",
 ]
 
 # Get additional origins from environment variable if set
