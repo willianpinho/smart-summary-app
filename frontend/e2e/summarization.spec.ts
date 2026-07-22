@@ -56,7 +56,7 @@ test.describe('Smart Summary App E2E', () => {
     const textarea = page.getByLabel(/text to summarize/i)
     await textarea.fill('Some text to clear')
 
-    await page.getByText(/clear/i).click()
+    await page.getByRole('button', { name: 'Clear text' }).click()
 
     const value = await textarea.inputValue()
     expect(value).toBe('')
@@ -79,7 +79,7 @@ test.describe('Smart Summary App E2E', () => {
     const submitButton = page.getByRole('button', { name: /generate summary/i })
     await submitButton.click()
 
-    await expect(page.getByText(/generating summary/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Generating summary' })).toBeVisible()
   })
 
   test('displays summary after successful submission', async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe('Smart Summary App E2E', () => {
     await submitButton.click()
 
     // Wait for summary to appear
-    await expect(page.getByRole('heading', { name: /summary/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Summary', exact: true })).toBeVisible()
     await expect(page.getByText(/this is a test summary/i)).toBeVisible()
   })
 
@@ -119,7 +119,7 @@ test.describe('Smart Summary App E2E', () => {
     const submitButton = page.getByRole('button', { name: /generate summary/i })
     await submitButton.click()
 
-    await expect(page.getByText(/error/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Error', exact: true })).toBeVisible()
   })
 
   test('copy button works after summary is generated', async ({ page }) => {
