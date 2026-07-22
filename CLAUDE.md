@@ -6,7 +6,7 @@
 
 - **Frontend:** Next.js 16, React 19, TailwindCSS, TypeScript
 - **Backend:** FastAPI 0.115, OpenAI SDK, Pydantic, Uvicorn
-- **Deployment:** Hetzner VPS via Docker (frontend + backend, `deploy-dev.yml`), backend also on Render
+- **Deployment:** Hetzner VPS via Docker (frontend + backend, `deploy-dev.yml`) — canonical, single backend target
 - **Testing:** Jest + React Testing Library + Playwright (frontend), pytest (backend)
 
 ## Commands

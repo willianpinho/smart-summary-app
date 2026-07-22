@@ -22,8 +22,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
           cache-dependency-path: ./frontend/pnpm-lock.yaml
 
       - name: Install dependencies
@@ -38,8 +38,9 @@ jobs:
       - name: Build Check
         run: pnpm run build
         env:
-          # Use production URL for PR checks to match deployment environment
-          NEXT_PUBLIC_API_URL: https://smart-summary-app.onrender.com
+          # Use the canonical production API URL for PR checks to match
+          # the Hetzner deployment (the only backend deploy target)
+          NEXT_PUBLIC_API_URL: https://api.smart-summary.dev.willianpinho.com
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -63,8 +64,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -82,7 +83,6 @@ jobs:
         run: pytest test_main.py --cov=main --cov-report=xml --cov-report=term
         env:
           OPENAI_API_KEY: test_key
-          ANTHROPIC_API_KEY: test_key
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
