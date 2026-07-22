@@ -202,8 +202,11 @@ async def generate_summary_stream(text: str) -> AsyncGenerator[str, None]:
         yield "data: [DONE]\n\n"
 
     except Exception as e:
-        error_message = f"Error generating summary: {str(e)}"
-        yield f"data: [ERROR] {error_message}\n\n"
+        # Log the real exception server-side; never forward raw exception
+        # text to the client (it can leak internals -- stack traces, model
+        # names, upstream error bodies).
+        logger.error("Error generating summary: %s", e, exc_info=True)
+        yield "data: [ERROR] An error occurred while generating the summary. Please try again.\n\n"
 
 
 @app.get("/")
@@ -240,10 +243,12 @@ async def summarize_text(request: Request, body: SummaryRequest = None):
                 "X-Accel-Buffering": "no",  # Disable nginx buffering
             },
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        # Note: SummaryRequest validation errors never reach this block --
+        # Pydantic raises them before the endpoint runs, and FastAPI turns
+        # them into a 422 response automatically.
+        logger.error("Unexpected error in summarize_text: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 if __name__ == "__main__":
